@@ -1,0 +1,55 @@
+LAB
+
+ 
+
+web app, asp.net or something else?
+
+- no data storage, store in memory
+
+ 
+
+https://codelabs.developers.google.com/codelabs/cloud-app-engine-aspnetcore#1
+
+https://docs.microsoft.com/en-us/aspnet/core/fundamentals/websockets?view=aspnetcore-5.0
+
+ 
+
+Server model:
+
+Room
+
+User list - name, id, Vote (last vote)
+
+- Clear votes
+
+ 
+
+Client side:
+
+View room
+
+List of users and list of their current votes
+
+Show votes
+
+Clear votes
+
+Send vote
+
+ 
+
+ 
+
+- Stories -
+
+Create a room
+
+Join a room
+
+View list of users and their votes
+
+Send Vote
+
+Show Votes (client side only display votes)
+
+Delete Votes (clears votes)
