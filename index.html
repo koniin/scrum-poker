@@ -3,10 +3,23 @@
 
 <head>
     <title>Scrum Poker</title>
-    <link href="bootstrap.min.css" rel="stylesheet">
+    <link href="/static/bootstrap.min.css" rel="stylesheet">
 </head>
 
 <body>
+    <style>
+        .dot {
+            height: 25px;
+            width: 25px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .dot-connected {
+            background-color: rgb(107, 236, 90);
+        }
+    </style>
     <div class="container mt-5" id="join-area">
         <div class="row g-3">
             <div class="col">
@@ -19,6 +32,7 @@
     <div id="vote-area" style="display:none;">
         <div class="container mt-5">
             <div class="row h5">
+                <div class="col-1"><span id="connection-status" class="dot"></span></div>
                 <div class="col-3">Room id:<span id="room-id-display">[11111]</span></div>
                 <div class="col">User name: <span id="user-id-display">[Henke]</span></div>
             </div>
@@ -71,14 +85,15 @@
         //     input.value = "";
         // }
 
+        var socket;
+
         var state = {
+            connected: false,
             roomId: "",
             userId: "",
+            id: "",
             revealed: false,
-            users: [
-                { name: "henke", vote: "" },
-                { name: "Malou", vote: "2" }
-            ]
+            users: []
         };
 
         function displayState() {
@@ -90,7 +105,7 @@
                     vote = state.users[i].vote;
                 }
                 stateHtml += "<div class='border-top p-3 row mt-3 h4'><div class='col'>" +
-                    state.users[i].name
+                    state.users[i].userId
                     + "</div><div class='col'>" +
                     vote
                     + "</div></div>";
@@ -101,33 +116,86 @@
             roomId.innerText = state.roomId;
             var userId = document.getElementById('user-id-display');
             userId.innerText = state.userId;
+
+            var connectedIcon = document.getElementById('connection-status');
+            connectedIcon.classList.add('dot-connected');
         }
 
         function vote() {
             var voteSelect = document.getElementById('vote-select');
-            console.log('send vote to server: ' + voteSelect.value);
+           
+            socket.send("vote:" + state.id + ":" + state.userId + ":" + voteSelect.value);
+
             // update state
             displayState();
         }
 
         function reveal() {
-            console.log('send reveal to server');
             // update state
             // TEMP:
-            state.revealed = true;
+            socket.send("reveal:" + state.id + ":" + state.userId);
+            //state.revealed = true;
             // 
             displayState();
         }
 
         function clearVotes() {
-            console.log('send clear to server');
             // update state
             // TEMP:
-            for (var i = 0; i < state.users.length; i++) {
-                state.users[i].vote = "";
-            }
-            state.revealed = false;
+            
+            socket.send("clear:" + state.id + ":" + state.userId);
+            
+            // for (var i = 0; i < state.users.length; i++) {
+            //     state.users[i].vote = "";
+            // }
+            // state.revealed = false;
+            // socket.send(state.userId + ":clear");
             //
+            displayState();
+        }
+
+        function messageRecieved(e) {
+            console.log(e.data);
+
+            const dataRecieved = e.data.split(":");
+            const roomId = dataRecieved[1];
+            const id = dataRecieved[2];
+            const userId = dataRecieved[3];
+            const vote = dataRecieved[4];
+            switch (dataRecieved[0]) {
+                case "myinfo":
+                case "joined":
+                    state.id = id;
+                    
+                    state.users.push({
+                        roomId: roomId,
+                        id: id,
+                        userId: userId,
+                        vote: vote
+                    });
+                    break;
+                case "voted":
+                    console.log(dataRecieved[3] + " voted");
+                    // .find or w/e
+                    state.users.forEach(u => {
+                        if(u.userId == userId) {
+                            u.vote = vote;
+                        }
+                    });
+                    break;
+                case "reveal":
+                    console.log(dataRecieved[3] + " revealed");
+                    state.revealed = true;
+                    break;
+                case "clear":
+                    console.log(dataRecieved[3] + " cleared");
+                    state.revealed = false;
+                    state.users.forEach(u => {
+                       u.vote = "";
+                    });
+                    break;
+            }
+
             displayState();
         }
 
@@ -142,10 +210,17 @@
             var userId = document.getElementById('user-id');
             state.userId = userId.value;
 
-            console.log('send join to server');
-            // update state
+            socket = new WebSocket("ws://localhost:8080/voting/" + state.roomId + "?userId=" + state.userId);
+
+            socket.onmessage = messageRecieved;
+
+            socket.onopen = function () {
+                state.connected = true;
+            };
+
             displayState(false);
         }
+
     </script>
 </body>
 
