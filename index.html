@@ -118,7 +118,11 @@
             userId.innerText = state.userId;
 
             var connectedIcon = document.getElementById('connection-status');
-            connectedIcon.classList.add('dot-connected');
+            if(state.connected) {
+                connectedIcon.classList.add('dot-connected');
+            } else {
+                connectedIcon.classList.remove('dot-connected');
+            }
         }
 
         function vote() {
@@ -214,11 +218,15 @@
 
             socket.onmessage = messageRecieved;
 
-            socket.onopen = function () {
+            socket.onopen = function (event) {
                 state.connected = true;
+                displayState();
             };
 
-            displayState(false);
+            socket.onclose = function(event) {
+                state.connected = false;
+                displayState();
+            };
         }
 
     </script>
