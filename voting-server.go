@@ -12,6 +12,15 @@ import (
 	"gopkg.in/olahol/melody.v1"
 )
 
+// m.Broadcast([]byte("msg"))
+
+// m.BroadcastOthers([]byte("msg"), s)
+
+// m.BroadcastFilter([]byte("msg"),
+// 	func(q *melody.Session) bool {
+// 		return q.Request.URL.Path == s.Request.URL.Path
+// 	})
+
 func serveHome(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.URL)
 	// if r.URL.Path != "/" {
@@ -47,56 +56,26 @@ func main() {
 	})
 
 	m.HandleMessage(func(s *melody.Session, msg []byte) {
-		// m.Broadcast(msg)
-
-		// m.BroadcastFilter(msg, func(q *melody.Session) bool {
-		// 	return q.Request.URL.Path == s.Request.URL.Path
-		// })
-
-		log.Println(string(msg))
+		log.Println("recieved: " + string(msg))
 
 		p := strings.Split(string(msg), ":")
+		cmd := p[0]
+
 		lock.Lock()
-		if p[0] == "vote" {
+		if cmd == "vote" || cmd == "reveal" || cmd == "clear" {
+			voter := voters[s]
+
 			if len(p) == 4 {
-
-				voter := voters[s]
-
-				//socket.send("vote:" + state.id + ":" + state.userId + ":" + voteSelect.value)
-				// vote:1:Göran:8
 				voter.Vote = p[3]
-				for sess, v := range voters {
-					if voter.RoomId == v.RoomId {
-						sess.Write([]byte("voted:" + voter.String()))
-					}
-				}
-
-				log.Println("voted:" + voter.String())
-
-				// m.BroadcastFilter([]byte("voted:"+voter.RoomId+":"+voter.ID+":"+voter.UserId+":"+voter.Vote),
-				// 	func(q *melody.Session) bool {
-				// 		return q.Request.URL.Path == s.Request.URL.Path
-				// 	})
 			}
-		} else if p[0] == "reveal" {
-			voter := voters[s]
+
 			for sess, v := range voters {
 				if voter.RoomId == v.RoomId {
-					sess.Write([]byte("reveal:" + voter.String()))
+					sess.Write([]byte(cmd + ":" + voter.String()))
 				}
 			}
-			log.Println("reveal:" + voter.String())
-		} else if p[0] == "clear" {
-			voter := voters[s]
-			for sess, v := range voters {
-				v.Vote = ""
-				if voter.RoomId == v.RoomId {
-					sess.Write([]byte("clear:" + voter.String()))
-				}
-			}
-			log.Println("clear:" + voter.String())
+			log.Println(cmd + ":" + voter.String())
 		}
-
 		lock.Unlock()
 	})
 
@@ -116,39 +95,26 @@ func main() {
 				vs.Write([]byte("joined:" + connectedVoter.String()))
 			}
 		}
-
 		// Add a new voter to the list
 		voters[s] = connectedVoter
-
 		// Echo info to the one connecting
 		s.Write([]byte("myinfo:" + voters[s].String()))
 
 		log.Println("connected:" + voters[s].String())
-
 		counter += 1
-
-		//m.BroadcastOthers([]byte("joined:"+voters[s].RoomId+":"+voters[s].ID+":"+voters[s].UserId), s)
 
 		lock.Unlock()
 	})
 
 	m.HandleDisconnect(func(s *melody.Session) {
 		lock.Lock()
-
 		voter := voters[s]
 		for sess, v := range voters {
 			if voter.RoomId == v.RoomId {
 				sess.Write([]byte("disconnected:" + voter.String()))
 			}
 		}
-
 		log.Println("disconnected:" + voter.String())
-
-		// m.BroadcastFilter([]byte("disconnected:"+voters[s].RoomId+":"+voters[s].ID+":"+voters[s].UserId),
-		// 	func(q *melody.Session) bool {
-		// 		return q.Request.URL.Path == s.Request.URL.Path
-		// 	})
-
 		delete(voters, s)
 		lock.Unlock()
 	})
