@@ -22,12 +22,14 @@ import (
 // 		return q.Request.URL.Path == s.Request.URL.Path
 // 	})
 
+// if r.URL.Path != "/" {
+// 	http.Error(w, "Not found", http.StatusNotFound)
+// 	return
+// }
+
 func serveHome(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.URL)
-	// if r.URL.Path != "/" {
-	// 	http.Error(w, "Not found", http.StatusNotFound)
-	// 	return
-	// }
+
 	if r.Method != "GET" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
