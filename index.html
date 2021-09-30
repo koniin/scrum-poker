@@ -215,16 +215,16 @@
             state.userId = userId.value;
 
             const loc = window.location;
-            let new_uri = "";
+            let websocket_uri = "";
             if (loc.protocol === "https:") {
-                new_uri = "wss:";
+                websocket_uri = "wss:";
             } else {
-                new_uri = "ws:";
+                websocket_uri = "ws:";
             }
-            new_uri += "//" + loc.host + "/voting/";
-            //new_uri += loc.pathname + "/voting/";
+            websocket_uri += "//" + loc.host + "/voting/";
+            //websocket_uri += loc.pathname + "/voting/";
 
-            socket = new WebSocket("ws://localhost:8080/voting/" + state.roomId + "?userId=" + state.userId);
+            socket = new WebSocket(websocket_uri + state.roomId + "?userId=" + state.userId);
 
             socket.onmessage = messageRecieved;
 
