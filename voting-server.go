@@ -27,8 +27,6 @@ import (
 // 	return
 // }
 
-// whatever
-
 func serveHome(w http.ResponseWriter, r *http.Request) {
 	log.Println(r.URL)
 
