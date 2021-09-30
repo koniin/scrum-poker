@@ -4,6 +4,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"strconv"
 	"strings"
@@ -121,6 +122,12 @@ func main() {
 
 	http.HandleFunc("/", serveHome)
 
-	log.Println("Listening on port 8080")
-	http.ListenAndServe(":8080", nil)
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+		log.Printf("defaulting to port %s \n", port)
+	}
+
+	log.Println("Listening on port " + port)
+	http.ListenAndServe(":"+port, nil)
 }
