@@ -68,23 +68,6 @@
     </div>
 
     <script>
-        // var input = document.getElementById("input");
-        // var output = document.getElementById("output");
-        // var socket = new WebSocket("ws://localhost:8080/echo");
-
-        // socket.onopen = function () {
-        //     output.innerHTML += "Status: Connected\n";
-        // };
-
-        // socket.onmessage = function (e) {
-        //     output.innerHTML += "Server: " + e.data + "\n";
-        // };
-
-        // function send() {
-        //     socket.send(input.value);
-        //     input.value = "";
-        // }
-
         var socket;
 
         var state = {
@@ -135,26 +118,12 @@
         }
 
         function reveal() {
-            // update state
-            // TEMP:
             socket.send("reveal:" + state.id + ":" + state.userId);
-            //state.revealed = true;
-            // 
             displayState();
         }
 
         function clearVotes() {
-            // update state
-            // TEMP:
-            
             socket.send("clear:" + state.id + ":" + state.userId);
-            
-            // for (var i = 0; i < state.users.length; i++) {
-            //     state.users[i].vote = "";
-            // }
-            // state.revealed = false;
-            // socket.send(state.userId + ":clear");
-            //
             displayState();
         }
 
@@ -214,6 +183,10 @@
             var userId = document.getElementById('user-id');
             state.userId = userId.value;
 
+            connect();
+        }
+
+        function connect() {
             const loc = window.location;
             let websocket_uri = "";
             if (loc.protocol === "https:") {
@@ -222,8 +195,7 @@
                 websocket_uri = "ws:";
             }
             websocket_uri += "//" + loc.host + "/voting/";
-            //websocket_uri += loc.pathname + "/voting/";
-
+            
             socket = new WebSocket(websocket_uri + state.roomId + "?userId=" + state.userId);
 
             socket.onmessage = messageRecieved;
@@ -233,9 +205,18 @@
                 displayState();
             };
 
-            socket.onclose = function(event) {
+            socket.onclose = function(e) {
                 state.connected = false;
                 displayState();
+                console.log('Socket is closed. Reconnect will be attempted in 1 second.', e.reason);
+                setTimeout(function() {
+                    connect();
+                }, 1000);
+            };
+
+            socket.onerror = function(err) {
+                console.error('Socket encountered error: ', err.message, 'Closing socket');
+                ws.close();
             };
         }
 
