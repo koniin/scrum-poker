@@ -187,6 +187,11 @@
         }
 
         function connect() {
+            state.connected = false;
+            state.id = "";
+            state.revealed = false;
+            state.users = [];
+
             const loc = window.location;
             let websocket_uri = "";
             if (loc.protocol === "https:") {
